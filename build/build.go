@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/shynxe/greact-cli/config"
+	"github.com/shynxe/greact/config"
 )
 
 var (
@@ -40,7 +40,7 @@ func parseFlags(args []string) {
 	flagSet.StringVar(&configPath, "config", "", "path to config file")
 
 	flagSet.Usage = func() {
-		fmt.Println("usage: greact-cli build [options]")
+		fmt.Println("usage: greact build [options]")
 		fmt.Println()
 		fmt.Println("options:")
 		flagSet.PrintDefaults()

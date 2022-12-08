@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shynxe/greact-cli/build"
-	"github.com/shynxe/greact-cli/config"
+	"github.com/shynxe/greact/build"
+	"github.com/shynxe/greact/config"
 )
 
 const (
@@ -56,7 +56,7 @@ func parseArgs() {
 	flag.Usage = func() {
 		printLogo()
 		fmt.Println()
-		fmt.Println("usage: greact-cli [options] [command]")
+		fmt.Println("usage: greact [options] [command]")
 		fmt.Println()
 		fmt.Println("options:")
 		flag.PrintDefaults()

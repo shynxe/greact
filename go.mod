@@ -1,4 +1,4 @@
-module github.com/shynxe/greact-cli
+module github.com/shynxe/greact
 
 go 1.19
 

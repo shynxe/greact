@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/shynxe/greact-cli/config"
+	"github.com/shynxe/greact/config"
 )
 
 func createWebpackConfig() error {

@@ -8,27 +8,69 @@ import (
 	"github.com/shynxe/greact/config"
 )
 
-func createWebpackConfig() error {
-	// get userConfig
-	userConfig := config.GetConfig()
+type WebpackConfig struct {
+	EntryPoints        string
+	HtmlWebpackPlugins string
+	BuildFolder        string
+	StaticFolder       string
+	PublicPath         string
+}
 
+var getSourceFiles = func() []string {
+	fileNames := []string{}
 	files, err := os.ReadDir(config.SourcePath)
 	if err != nil {
-		return err
+		panic(err)
 	}
+
+	for _, file := range files {
+		fileNames = append(fileNames, file.Name())
+	}
+
+	return fileNames
+}
+
+func getJSFiles(filenames []string) []string {
+	var sourceFiles []string
+	for _, filename := range filenames {
+		// only add javascript files
+		fileExt := filepath.Ext(filename)
+		if fileExt == ".js" {
+			sourceFiles = append(sourceFiles, filename)
+		}
+	}
+
+	return sourceFiles
+}
+
+var getJSSourceFiles = func() []string {
+	files := getSourceFiles()
+	return getJSFiles(files)
+}
+
+func getWebpackConfig(userConfig config.Config) WebpackConfig {
+	jsFiles := getJSSourceFiles()
 
 	entryPoints := ""
 	htmlWebpackPlugins := ""
-	for _, file := range files {
-		// only add javascript files
-		fileExt := filepath.Ext(file.Name())
-		if fileExt == ".js" {
-			fileNameNoExt := filepath.Base(file.Name())
-			fileNameNoExt = fileNameNoExt[:len(fileNameNoExt)-len(fileExt)]
-			entryPoints += fileNameNoExt + ": path.join(__dirname, '" + userConfig.SourceFolder + "', '" + file.Name() + "'),\n\t\t"
-			htmlWebpackPlugins += "new HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, '" + userConfig.BuildFolder + "', '.greact-template.html'),\n\t\t\tfilename: '" + fileNameNoExt + ".html',\n\t\t\tchunks: ['render', '" + fileNameNoExt + "'],\n\t\t\tpublicPath: '" + userConfig.PublicPath + "',\n\t\t}),\n\t\t"
-		}
+	for _, file := range jsFiles {
+		fileNameNoExt := filepath.Base(file)
+		fileNameNoExt = fileNameNoExt[:len(fileNameNoExt)-len(".js")]
+		entryPoints += fileNameNoExt + ": path.join(__dirname, '" + userConfig.SourceFolder + "', '" + file + "'),\n\t\t"
+		htmlWebpackPlugins += "new HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, '" + userConfig.BuildFolder + "', '.greact-template.html'),\n\t\t\tfilename: '" + fileNameNoExt + ".html',\n\t\t\tchunks: ['render', '" + fileNameNoExt + "'],\n\t\t\tpublicPath: '" + userConfig.PublicPath + "',\n\t\t}),\n\t\t"
 	}
+
+	return WebpackConfig{
+		EntryPoints:        entryPoints,
+		HtmlWebpackPlugins: htmlWebpackPlugins,
+		BuildFolder:        userConfig.BuildFolder,
+		StaticFolder:       userConfig.StaticFolder,
+		PublicPath:         userConfig.PublicPath,
+	}
+}
+
+func createWebpackConfig() error {
+	userConfig := config.GetConfig()
 
 	// create template
 	tmpl, err := template.New("webpack").Parse(webpackConfigTemplate)
@@ -52,21 +94,7 @@ func createWebpackConfig() error {
 	}
 	defer f.Close()
 
-	type WebpackConfig struct {
-		EntryPoints        string
-		HtmlWebpackPlugins string
-		BuildPath          string
-		StaticPath         string
-		PublicPath         string
-	}
-
-	webpackConfig := WebpackConfig{
-		EntryPoints:        entryPoints,
-		HtmlWebpackPlugins: htmlWebpackPlugins,
-		BuildPath:          userConfig.BuildFolder,
-		StaticPath:         userConfig.StaticFolder,
-		PublicPath:         userConfig.PublicPath,
-	}
+	webpackConfig := getWebpackConfig(userConfig)
 
 	err = tmpl.Execute(f, webpackConfig)
 	if err != nil {
@@ -82,10 +110,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
 	entry: {
 		{{.EntryPoints}}
-		render: path.join(__dirname, "{{.BuildPath}}", ".greact-renderer.js"),
+		render: path.join(__dirname, "{{.BuildFolder}}", ".greact-renderer.js"),
 	},
 	output: {
-		path: path.join(__dirname, "{{.StaticPath}}"),
+		path: path.join(__dirname, "{{.StaticFolder}}"),
 		filename: "[name].[contenthash:8].js",
 		libraryTarget: "umd",
 		library: "[name]",

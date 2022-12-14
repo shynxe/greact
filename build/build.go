@@ -82,11 +82,6 @@ func build() error {
 			return fmt.Errorf("error creating client: %w", err)
 		}
 
-		err = createWebpackConfig()
-		if err != nil {
-			return fmt.Errorf("error creating webpack config: %w", err)
-		}
-
 		err = createBuildPath()
 		if err != nil {
 			return fmt.Errorf("error creating default greact folder: %w", err)
@@ -119,7 +114,7 @@ func build() error {
 }
 
 func countHTMLFiles() int {
-	files, err := os.ReadDir(config.BuildPath)
+	files, err := os.ReadDir(config.StaticPath)
 	if err != nil {
 		fmt.Println(err)
 		return -1
@@ -127,7 +122,8 @@ func countHTMLFiles() int {
 
 	count := 0
 	for _, file := range files {
-		fileExt := filepath.Ext(file.Name())
+		filename := file.Name()
+		fileExt := filepath.Ext(filename)
 
 		if fileExt == ".html" {
 			count++
@@ -226,6 +222,11 @@ func createClient() error {
 
 func buildClient() error {
 	// call webpack in clientPath directory
+	err := createWebpackConfig()
+	if err != nil {
+		return fmt.Errorf("error creating webpack config: %w", err)
+	}
+
 	currentDir, _ := os.Getwd()
 	os.Chdir(config.GetConfig().ClientPath)
 	output := exec.Command("npx", "webpack", "--mode", "production")

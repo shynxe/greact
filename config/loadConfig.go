@@ -17,6 +17,7 @@ var config = Config{}
 var (
 	BuildPath  string
 	SourcePath string
+	StaticPath string
 	IsLoaded   bool
 )
 
@@ -39,6 +40,7 @@ func LoadConfig(path string) error {
 	// set the build and source paths
 	BuildPath = config.ClientPath + "/" + config.BuildFolder
 	SourcePath = config.ClientPath + "/" + config.SourceFolder
+	StaticPath = config.ClientPath + "/" + config.StaticFolder
 
 	IsLoaded = true
 

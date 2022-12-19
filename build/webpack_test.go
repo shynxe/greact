@@ -68,7 +68,7 @@ func Test_getWebpackConfig(t *testing.T) {
 			},
 			want: WebpackConfig{
 				EntryPoints:        "index: path.join(__dirname, 'src', 'index.js'),\n\t\tabout: path.join(__dirname, 'src', 'about.js'),\n\t\t",
-				HtmlWebpackPlugins: "new HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, 'build', '.greact-template.html'),\n\t\t\tfilename: 'index.html',\n\t\t\tchunks: ['render', 'index'],\n\t\t\tpublicPath: '/',\n\t\t}),\n\t\tnew HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, 'build', '.greact-template.html'),\n\t\t\tfilename: 'about.html',\n\t\t\tchunks: ['render', 'about'],\n\t\t\tpublicPath: '/',\n\t\t}),\n\t\t",
+				HtmlWebpackPlugins: "new HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, 'build', '.greact-template.html'),\n\t\t\tfilename: 'index.html',\n\t\t\tchunks: ['hydrate', 'index'],\n\t\t\tpublicPath: '/',\n\t\t}),\n\t\tnew HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, 'build', '.greact-template.html'),\n\t\t\tfilename: 'about.html',\n\t\t\tchunks: ['hydrate', 'about'],\n\t\t\tpublicPath: '/',\n\t\t}),\n\t\t",
 				BuildFolder:        "build",
 				StaticFolder:       "static",
 				PublicPath:         "/",

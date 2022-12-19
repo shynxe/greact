@@ -92,7 +92,7 @@ func build() error {
 			return fmt.Errorf("error creating html template: %w", err)
 		}
 
-		err = createRenderer()
+		err = createHydrater()
 		if err != nil {
 			return fmt.Errorf("error creating renderer: %w", err)
 		}
@@ -139,8 +139,8 @@ func createBuildPath() error {
 	return nil
 }
 
-func createRenderer() error {
-	rendererPath := config.BuildPath + "/.greact-renderer.js"
+func createHydrater() error {
+	rendererPath := config.BuildPath + "/.greact-hydrater.js"
 	_, err := os.Create(rendererPath)
 	if err != nil {
 		return err
@@ -308,7 +308,7 @@ const HTMLTemplate = `<html>
   <div id="root">{{SSR}}</div>
 </body>
 <script>
-  const hydrate = (fn) => {
+  const hydrateDOM = (fn) => {
     if (document.readyState != 'loading') {
       fn();
     } else {
@@ -316,7 +316,7 @@ const HTMLTemplate = `<html>
     }
   }
 
-  hydrate(function () {
+  hydrateDOM(function () {
     // {{__HYDRATION__}}
   })
 
@@ -331,8 +331,8 @@ const _page = ({component, props}) => {
     return React.createElement(component, props);    
 }
 
-const render = (component, props) => {
+const hydrate = (component, props) => {
     ReactDOM.hydrate(_page({component, props}), document.getElementById('root'));
 }
 
-export default render;`
+export default hydrate;`

@@ -57,7 +57,7 @@ func getWebpackConfig(userConfig config.Config) WebpackConfig {
 		fileNameNoExt := filepath.Base(file)
 		fileNameNoExt = fileNameNoExt[:len(fileNameNoExt)-len(".js")]
 		entryPoints += fileNameNoExt + ": path.join(__dirname, '" + userConfig.SourceFolder + "', '" + file + "'),\n\t\t"
-		htmlWebpackPlugins += "new HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, '" + userConfig.BuildFolder + "', '.greact-template.html'),\n\t\t\tfilename: '" + fileNameNoExt + ".html',\n\t\t\tchunks: ['render', '" + fileNameNoExt + "'],\n\t\t\tpublicPath: '" + userConfig.PublicPath + "',\n\t\t}),\n\t\t"
+		htmlWebpackPlugins += "new HtmlWebpackPlugin({\n\t\t\ttemplate: path.join(__dirname, '" + userConfig.BuildFolder + "', '.greact-template.html'),\n\t\t\tfilename: '" + fileNameNoExt + ".html',\n\t\t\tchunks: ['hydrate', '" + fileNameNoExt + "'],\n\t\t\tpublicPath: '" + userConfig.PublicPath + "',\n\t\t}),\n\t\t"
 	}
 
 	return WebpackConfig{
@@ -110,7 +110,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
 	entry: {
 		{{.EntryPoints}}
-		render: path.join(__dirname, "{{.BuildFolder}}", ".greact-renderer.js"),
+		hydrate: path.join(__dirname, "{{.BuildFolder}}", ".greact-hydrater.js"),
 	},
 	output: {
 		path: path.join(__dirname, "{{.StaticFolder}}"),

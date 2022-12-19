@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/shynxe/greact/config"
 )
@@ -94,15 +95,20 @@ func build() error {
 
 		err = createHydrater()
 		if err != nil {
-			return fmt.Errorf("error creating renderer: %w", err)
+			return fmt.Errorf("error creating hydrater: %w", err)
 		}
 	} else if err := clientValid(); err != nil {
 		return fmt.Errorf("invalid client: %w", err)
 	}
 
+	err := createRenderer()
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+
 	// build client
 	fmt.Println("building pages...")
-	err := buildClient()
+	err = buildClient()
 	if err != nil {
 		return fmt.Errorf("error building pages: %w", err)
 	}
@@ -111,6 +117,27 @@ func build() error {
 	fmt.Printf("successfully built %d pages!", countHTMLFiles())
 
 	return nil
+}
+
+func getSourcePageNames() []string {
+	files, err := os.ReadDir(config.SourcePath)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	var pageNames []string
+	for _, file := range files {
+		filename := file.Name()
+		fileExt := filepath.Ext(filename)
+
+		if fileExt == ".js" {
+			pageName := filename[:len(filename)-len(fileExt)]
+			pageNames = append(pageNames, pageName)
+		}
+	}
+
+	return pageNames
 }
 
 func countHTMLFiles() int {
@@ -145,6 +172,54 @@ func createHydrater() error {
 	if err != nil {
 		return err
 	}
+
+	err = os.WriteFile(
+		rendererPath,
+		[]byte(hydrater),
+		os.ModePerm,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createRenderer() error {
+	rendererPath := config.BuildPath + "/.greact-renderer.js"
+	_, err := os.Create(rendererPath)
+	if err != nil {
+		return err
+	}
+
+	renderer := "import React from 'react';\nimport * as ReactDOMServer from 'react-dom/server';\n"
+
+	// get all page names
+	pageNames := getSourcePageNames()
+
+	// create import statements, src is the SOURCEFOLDER of config
+	for _, pageName := range pageNames {
+		renderer += fmt.Sprintf("import %s from '../%s/%s.js';\n", strings.Title(pageName), config.GetConfig().SourceFolder, pageName)
+	}
+
+	// create render functions
+	for _, pageName := range pageNames {
+		renderer += fmt.Sprintf("const render%s = (props) => {\n", strings.Title(pageName))
+		renderer += fmt.Sprintf("    return ReactDOMServer.renderToString(React.createElement(%s, props));\n", strings.Title(pageName))
+		renderer += "}\n\n"
+	}
+
+	// create render function
+	renderer += "const render = (page, props) => {\n"
+	for _, pageName := range pageNames {
+		renderer += fmt.Sprintf("    if (page === '%s') {\n", pageName)
+		renderer += fmt.Sprintf("        return render%s(props);\n", strings.Title(pageName))
+		renderer += "    }\n"
+	}
+	renderer += "}\n\n"
+
+	// export render function
+	renderer += "export default render;\n"
 
 	err = os.WriteFile(
 		rendererPath,
@@ -233,8 +308,14 @@ func buildClient() error {
 	if err := output.Run(); err != nil {
 		return err
 	}
-	os.Chdir(currentDir)
 
+	// now call it with config server-webpack.config.js
+	output = exec.Command("npx", "webpack", "--mode", "production", "--config", "server-webpack.config.js")
+	if err := output.Run(); err != nil {
+		return err
+	}
+
+	os.Chdir(currentDir)
 	return nil
 }
 
@@ -324,7 +405,7 @@ const HTMLTemplate = `<html>
 
 </html>`
 
-const renderer = `import React from 'react';
+const hydrater = `import React from 'react';
 import ReactDOM from 'react-dom';
 
 const _page = ({component, props}) => {

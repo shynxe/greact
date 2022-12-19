@@ -78,8 +78,6 @@ func createWebpackConfig() error {
 		return err
 	}
 
-	// create file
-	// check if clientPath exists
 	if _, err := os.Stat(userConfig.ClientPath); os.IsNotExist(err) {
 		// create clientPath
 		err = os.Mkdir(userConfig.ClientPath, 0755)
@@ -88,6 +86,7 @@ func createWebpackConfig() error {
 		}
 	}
 
+	// create webpack config for client pages
 	f, err := os.Create(userConfig.ClientPath + "/webpack.config.js")
 	if err != nil {
 		return err
@@ -95,6 +94,22 @@ func createWebpackConfig() error {
 	defer f.Close()
 
 	webpackConfig := getWebpackConfig(userConfig)
+
+	err = tmpl.Execute(f, webpackConfig)
+	if err != nil {
+		return err
+	}
+
+	// now create server webpack config
+	tmpl, err = template.New("webpack-server").Parse(serverWebpackConfig)
+	if err != nil {
+		return err
+	}
+
+	f, err = os.Create(userConfig.ClientPath + "/server-webpack.config.js")
+	if err != nil {
+		return err
+	}
 
 	err = tmpl.Execute(f, webpackConfig)
 	if err != nil {
@@ -154,4 +169,33 @@ module.exports = {
 	plugins: [
 		{{.HtmlWebpackPlugins}}
 	],
+};`
+
+const serverWebpackConfig = `const path = require('path');
+
+module.exports = {
+	entry: {        
+		render: path.join(__dirname, "{{.BuildFolder}}", ".greact-renderer.js"),
+	},
+	output: {
+		path: path.join(__dirname, "{{.BuildFolder}}"),
+		filename: "[name].js",
+		libraryTarget: "umd",
+		library: "[name]",
+        globalObject: 'this',
+	},
+	module: {
+		rules: [
+			{
+				test: /\.?js$/,
+				exclude: /node_modules/,
+				use: {
+					loader: "babel-loader",
+					options: {
+						plugins: ['@babel/plugin-transform-react-jsx']
+					}
+				}
+			},
+		]
+	},
 };`

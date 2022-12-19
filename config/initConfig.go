@@ -69,7 +69,7 @@ func getUserInput() {
 
 func setConfigDefaults() {
 	viper.SetDefault("clientPath", "./client")
-	viper.SetDefault("sourceFolder", "src")
+	viper.SetDefault("sourceFolder", "pages")
 	viper.SetDefault("buildFolder", "build")
 	viper.SetDefault("staticFolder", "static")
 	viper.SetDefault("publicPath", "/public/")

@@ -49,9 +49,6 @@ func run() {
 	if _, err := io.Copy(os.Stdout, stdout); err != nil {
 		printError(err)
 	}
-	if err := cmd.Wait(); err != nil {
-		printError(err)
-	}
 
 	// Remove the app file when the function returns, even if it is terminated by a SIGKILL signal
 	defer os.Remove("app")

@@ -37,7 +37,9 @@ func main() {
 		case "build":
 			build.Build(os.Args[2:])
 		case "run":
-			build.Run()
+			build.Run(os.Args[2:])
+		case "dev":
+			build.Dev(os.Args[2:])
 		case "init":
 			config.InitConfig()
 		case "help":
@@ -64,6 +66,7 @@ func parseArgs() {
 		fmt.Println("commands:")
 		fmt.Println("  build\t\tbuild the react pages")
 		fmt.Println("  run\t\tstart the server")
+		fmt.Println("  dev\t\trun dev mode")
 		fmt.Println("  init\t\tinitialize the config file")
 		fmt.Println("  help\t\tshow this help")
 	}

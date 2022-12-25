@@ -47,5 +47,5 @@ func main() {
 ```
 4. build & run
 
-```greact run``` or ```greact dev```
+```greact dev```
 

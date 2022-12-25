@@ -10,15 +10,7 @@ Simple React Server-Side Rendering library written in Golang
 
 ```greact init```
 
-3. build project
-
-```greact build```
-
-4. get greact library to access render methods
-
-```go get github.com/shynxe/greact```
-
-5. set up an http server to render the react pages
+3. set up an http server to render the react pages
 
 ```
 package main
@@ -53,3 +45,7 @@ func main() {
 	r.Run("localhost:8080")
 }
 ```
+4. build & run
+
+```greact run``` or ```greact dev```
+

@@ -10,7 +10,7 @@ Simple React Server-Side Rendering library written in Golang
 
 ```greact init```
 
-3. set up an http server to render the react pages
+3. set up an http server to render the react pages (```main.go```)
 
 ```
 package main

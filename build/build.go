@@ -114,7 +114,7 @@ func build() error {
 	}
 
 	// print count of .html files in build folder
-	fmt.Printf("successfully built %d pages!", countHTMLFiles())
+	fmt.Printf("successfully built %d pages!\n", countHTMLFiles())
 
 	return nil
 }
@@ -269,28 +269,82 @@ func clientValid() error {
 func createClient() error {
 	// create clientPath directory
 	fmt.Println("creating client...")
-	os.MkdirAll(config.GetConfig().ClientPath, os.ModePerm)
+	err := os.MkdirAll(config.GetConfig().ClientPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	// create clientPath/src directory and add a simple index.js file react page
-	os.MkdirAll(config.SourcePath, os.ModePerm)
-	os.Create(config.SourcePath + "/index.js")
+	err = os.MkdirAll(config.SourcePath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	indexFile, err := os.Create(config.SourcePath + "/index.js")
+	if err != nil {
+		return err
+	}
+
 	// write sample react page to index.js
-	os.WriteFile(config.SourcePath+"/index.js", []byte(reactSamplePage), os.ModePerm)
+	_, err = indexFile.WriteString(reactSamplePage)
+	if err != nil {
+		return err
+	}
 
 	// create package.json file
-	os.Create(config.GetConfig().ClientPath + "/package.json")
-	os.WriteFile(config.GetConfig().ClientPath+"/package.json", []byte(packageJSON), os.ModePerm)
+	packageFile, err := os.Create(config.GetConfig().ClientPath + "/package.json")
+	packageFile.WriteString(packageJSON)
+	if err != nil {
+		return err
+	}
 
-	// run npm install and wait for it to finish
+	// install dependencies
+	err = installDependencies()
+	return err
+}
+
+func installDependencies() error {
 	fmt.Println("installing dependencies...")
 
 	currentDir, _ := os.Getwd()
-	os.Chdir(config.GetConfig().ClientPath)
-
-	output := exec.Command("npm", "install")
-	if err := output.Run(); err != nil {
-		return fmt.Errorf("error installing dependencies (%w)", err)
+	err := os.Chdir(config.GetConfig().ClientPath)
+	if err != nil {
+		return err
 	}
+
+	var dependencies = []string{
+		"react",
+		"react-dom",
+	}
+
+	var devDependencies = []string{
+		"@babel/cli",
+		"@babel/core",
+		"@babel/plugin-transform-react-jsx-source",
+		"@babel/preset-react",
+		"babel-loader",
+		"html-webpack-plugin",
+		"webpack",
+		"webpack-cli",
+		"webpack-dev-server",
+	}
+
+	// install dependencies
+	for _, dependency := range dependencies {
+		output := exec.Command("npm", "install", dependency)
+		if err := output.Run(); err != nil {
+			return err
+		}
+	}
+
+	// install dev dependencies
+	for _, dependency := range devDependencies {
+		output := exec.Command("npm", "install", dependency, "--save-dev")
+		if err := output.Run(); err != nil {
+			return err
+		}
+	}
+
 	os.Chdir(currentDir)
 	return nil
 }
@@ -351,32 +405,8 @@ export default App;`
 const packageJSON = `{
 	"name": "greact",
 	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
-	"scripts": {
-	  "build": "webpack --mode production",
-	  "dev": "webpack-dev-server --mode development --open --hot",
-	  "test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"author": "",
-	"license": "ISC",
-	"devDependencies": {
-	  "@babel/cli": "^7.19.3",
-	  "@babel/core": "^7.20.5",
-	  "@babel/plugin-transform-react-jsx-source": "^7.19.6",
-	  "@babel/preset-react": "^7.18.6",
-	  "babel-loader": "^9.1.0",
-	  "html-webpack-plugin": "^5.5.0",
-	  "webpack": "^5.75.0",
-	  "webpack-cli": "^5.0.0",
-	  "webpack-dev-server": "^4.11.1"
-	},
-	"dependencies": {
-	  "react": "^18.2.0",
-	  "react-dom": "^18.2.0"
-	}
-  }
-`
+	"author": ""
+}`
 
 const HTMLTemplate = `<html>
 

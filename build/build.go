@@ -13,6 +13,7 @@ import (
 
 var (
 	configPath string
+	devMode    bool
 )
 
 // Build is the main function of the build command
@@ -35,10 +36,12 @@ func Build(args []string) {
 func parseFlags(args []string) {
 	// flags:
 	// -c, --config: path to config file
+	// -dev: dev mode
 	// new flagset for build command
 	flagSet := flag.NewFlagSet("build", flag.ExitOnError)
 	flagSet.StringVar(&configPath, "c", "", "path to config file")
 	flagSet.StringVar(&configPath, "config", "", "path to config file")
+	flagSet.BoolVar(&devMode, "dev", false, "dev mode")
 
 	flagSet.Usage = func() {
 		fmt.Println("usage: greact build [options]")
@@ -88,11 +91,6 @@ func build() error {
 			return fmt.Errorf("error creating default greact folder: %w", err)
 		}
 
-		err = createHTMLTemplate()
-		if err != nil {
-			return fmt.Errorf("error creating html template: %w", err)
-		}
-
 		err = createHydrater()
 		if err != nil {
 			return fmt.Errorf("error creating hydrater: %w", err)
@@ -101,7 +99,12 @@ func build() error {
 		return fmt.Errorf("invalid client: %w", err)
 	}
 
-	err := createRenderer()
+	err := createHTMLTemplate()
+	if err != nil {
+		return fmt.Errorf("error creating html template: %w", err)
+	}
+
+	err = createRenderer()
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
@@ -240,9 +243,17 @@ func createHTMLTemplate() error {
 		return err
 	}
 
+	// if devMode, add refreshScript to HTMLTemplate
+	var htmlTemplate string
+	if devMode {
+		htmlTemplate = strings.Replace(HTMLTemplate, "</head>", refreshScript+"</head>", 1)
+	} else {
+		htmlTemplate = HTMLTemplate
+	}
+
 	err = os.WriteFile(
 		templatePath,
-		[]byte(HTMLTemplate),
+		[]byte(htmlTemplate),
 		os.ModePerm,
 	)
 	if err != nil {
@@ -430,7 +441,6 @@ const HTMLTemplate = `<html>
   hydrateDOM(function () {
     // {{__HYDRATION__}}
   })
-
 </script>
 
 </html>`

@@ -3,43 +3,88 @@ package build
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/gorilla/websocket"
 	"github.com/shynxe/greact/config"
 )
 
+var DevWebSocket *websocket.Conn
+var timer *time.Timer
+
+const refreshDebounce = time.Millisecond * 200
+
 // Dev is the main function of the dev command
 func Dev(args []string) {
-	// 1. build pages
-	// 2. run client
+	args = append(args, "-dev")
 	Build(args)
 
-	go watchClient()
+	go initDevSocket()
+	go watchClient(config.StaticPath, handleRefreshClient)
+	go watchClient(config.SourcePath, handleBuildClient)
 	watchServer()
 }
 
+func handleRefreshClient(e fsnotify.Event) {
+	if timer == nil {
+		timer = time.AfterFunc(refreshDebounce, func() {
+			if err := DevWebSocket.WriteMessage(websocket.TextMessage, []byte("refresh")); err != nil {
+				fmt.Println("Error sending refresh to websocket:", err)
+			}
+			timer = nil
+		})
+	} else {
+		timer.Reset(refreshDebounce)
+	}
+}
+
+func handleBuildClient(e fsnotify.Event) {
+	build()
+}
+
+func initDevSocket() {
+	var upgrader = websocket.Upgrader{}
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		DevWebSocket, err = upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Println("Error upgrading websocket:", err)
+			http.Error(w, "Could not upgrade websocket connection", http.StatusInternalServerError)
+			return
+		}
+
+		for {
+			_, _, err := DevWebSocket.ReadMessage()
+			if err != nil {
+				break
+			}
+		}
+
+		defer DevWebSocket.Close()
+	})
+
+	http.ListenAndServe(":1501", nil)
+}
+
 // Watch the client source directory for changes
-// Set the client build to be executed when a change is detected
-// Run the event loop to watch for changes
-func watchClient() {
+func watchClient(path string, onChange func(e fsnotify.Event)) {
 	clientWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer clientWatcher.Close()
 
-	err = clientWatcher.Add(config.SourcePath)
+	err = clientWatcher.Add(path)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	onChange := func(e fsnotify.Event) {
-		log.Println("Detected a client change: ", e.Name)
-		build()
 	}
 
 	for {
@@ -53,9 +98,6 @@ func watchClient() {
 }
 
 // Watch the current directory (only the ".go" files)
-// Set the "go run ." command to be executed when a change is detected
-// Run the event loop to watch for changes
-// When a change is detected, the server is restarted (the previous command is killed)
 func watchServer() {
 	serverWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -90,14 +132,10 @@ func watchServer() {
 	onChange := func(e fsnotify.Event) {
 		fileExt := e.Name[len(e.Name)-3:]
 		if fileExt == ".go" {
-			log.Println("Detected a server change: ", e.Name)
-
 			// Kill the previous command
 			if cmd != nil {
 				if err := cmd.Process.Kill(); err != nil {
 					log.Println("Error killing command: ", err)
-				} else {
-					log.Println("Killed command: ", cmd)
 				}
 			}
 
@@ -172,3 +210,12 @@ func buildApp(cmd *exec.Cmd) bool {
 	}
 	return false
 }
+
+const refreshScript = `<script type="text/javascript">
+const socket = new WebSocket('ws://localhost:1501/ws');
+  socket.onmessage = function (event) {
+    console.log('Received data from server:', event.data);
+    if (event.data === 'refresh') {
+      window.location.reload();
+    }
+  }</script>`

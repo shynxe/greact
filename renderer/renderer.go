@@ -24,9 +24,6 @@ func RenderPage(page string, props interface{}) string {
 	html := string(file)
 
 	// get the rendered html from the page component
-
-	// node -e "const page=require('./build/render.js');console.log(page.default('index', {name: 'test'}));"
-	// run the node command to get the rendered html
 	cmd := exec.Command("node", "-e", "const page=require('"+config.BuildPath+"/render.js');console.log(page.default('"+page+"', "+string(jsonData)+"));")
 	stdout, err := cmd.Output()
 	if err != nil {

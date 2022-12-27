@@ -214,8 +214,8 @@ func buildApp(cmd *exec.Cmd) bool {
 const refreshScript = `<script type="text/javascript">
 const socket = new WebSocket('ws://localhost:1501/ws');
   socket.onmessage = function (event) {
-    console.log('Received data from server:', event.data);
     if (event.data === 'refresh') {
+	  console.log('Received refresh command from server. Reloading page...')
       window.location.reload();
     }
   }</script>`

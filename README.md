@@ -13,7 +13,7 @@ go install github.com/shynxe/greact
 
 ```greact init```
 
-3. set up an http server to render the react pages (```main.go```)
+3. set up an http server to render the react pages (```main.go```) and **install its dependencies (gin)**
 
 ```
 package main

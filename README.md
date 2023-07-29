@@ -4,7 +4,10 @@ Simple React Server-Side Rendering library written in Golang
 ## how to use
 1. install greact as a go binary
 
-```go install github.com/shynxe/greact```
+```
+go get github.com/shynxe/greact
+go install github.com/shynxe/greact
+```
 
 2. initialize a greact project
 
